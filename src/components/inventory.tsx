@@ -128,13 +128,10 @@ const Inventory = () => {
              * We're missing some code here to enable our new cart functionality! 
              * Retrieve this code from "Failure Is An Option! - Add the Code", Step 1
              *************************************************************************/}
-            <ReserveButton
-              setHandleModal={setHandleModal}
-              handleModal={handleModal}
-              handleClickTest={handleClickTest}
-              updateField={updateField}
-              formData={{ name, email }}
-              onButtonClick={onButtonClick}
+            <AddToCartButton
+              product={product}
+              errorTesting={errorTesting}
+              clickHandler={addToCartClickHandler}
             />
             {/*****************************************************************
              * Make sure you replace the code above with your new cart code!

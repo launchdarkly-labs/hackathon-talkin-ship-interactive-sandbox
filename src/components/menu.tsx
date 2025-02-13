@@ -24,7 +24,6 @@ import { Button } from "./ui/button";
 import { ShoppingCartIcon } from "lucide-react";
 import logo from "/public/images/ld-white-wide.png";
 import ts from "/public/images/talkin-ship.png";
-import { setCookie } from "cookies-next";
 
 const NavigationMenuDemo = () => {
   const [uiCountry, setUICountry] = React.useState("US");
@@ -40,17 +39,6 @@ const NavigationMenuDemo = () => {
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
 
   const ldclient = useLDClient();
-
-  const changeCountry = (country: any) => {
-    if (ldclient) {
-      console.log(country);
-      setUICountry(country);
-      const context: any = ldclient?.getContext();
-      context.location.country = country;
-      ldclient?.identify(context);
-      setCookie("ldcontext", context);
-    }
-  };
 
   const context: any = ldclient?.getContext();
   console.log(context);
@@ -68,7 +56,7 @@ const NavigationMenuDemo = () => {
         "Taking on Database Migrations - Getting Our Application Ready", Step 2, 
         replace this comment block with the code from the guide
         ************************************************************************/}
-        {updatedBillingUi && releaseUpdatedStorefront ? (
+        {
           <NavigationMenu.Item>
             <NavigationMenuTrigger>
               <div className="bg-blue-500 p-2 text-white" style={{ width: "85px", height: "40px", alignItems: 'center', display: 'flex' }}>
@@ -83,7 +71,7 @@ const NavigationMenuDemo = () => {
               </div>
             </NavigationMenuContent>
           </NavigationMenu.Item>
-        ) : null}
+        }
         <NavigationMenu.Item>
           <NavigationMenuLink>
             <Login />

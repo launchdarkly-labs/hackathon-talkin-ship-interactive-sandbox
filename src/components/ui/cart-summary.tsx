@@ -5,12 +5,19 @@ import * as Separator from '@radix-ui/react-separator';
 import { styled } from '@stitches/react';
 import { blueDark, grass, slate } from '@radix-ui/colors';
 import { AiOutlineShopping } from 'react-icons/ai';
-import { loadStripe } from '@stripe/stripe-js';
-import { useLDClient } from "launchdarkly-react-client-sdk";
+import { useLDClient, useFlags } from "launchdarkly-react-client-sdk";
+import { v4 as uuidv4 } from 'uuid';
+import { setCookie, getCookie } from "cookies-next";
+
 
 // const inter = Inter({ subsets: ['latin'] });
 
 const CartSummary = () => {
+  const { checkout } = useFlags();
+  const user = getCookie("ldcontext");
+  const checkoutTrue = getCookie("checkoutTrue");
+  console.log('user in cart -> ', user);
+  console.log('checkout in cart -> ', checkout);
   const [loading, setLoading] = useState(false)
   const [cartEmpty, setCartEmpty] = useState(true)
   const [errorMessage, setErrorMessage] = useState('')
@@ -20,42 +27,52 @@ const CartSummary = () => {
     clearCart,
     cartDetails,
   } = useShoppingCart()
-
   const client = useLDClient();
 
   useEffect(() => setCartEmpty(!cartCount), [cartCount])
 
-  const handleCheckout: React.FormEventHandler<HTMLFormElement> = async (
-    event
-  ) => {
-    event.preventDefault()
-    setLoading(true)
-    setErrorMessage('')
-    try {
-	const body = { cartDetails };
-	const res = await fetch('/api/checkout', {
-	  	method: 'POST', // *GET, POST, PUT, DELETE, etc.
-      cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
-      credentials: 'same-origin', // include, *same-origin, omit
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': "*",
-        // 'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      redirect: 'follow', // manual, *follow, error
-      referrerPolicy: 'no-referrer', // no-referrer, *client
-	  body: JSON.stringify(body || {}),
-	    });
-      const url = await res.json()
-      window.location.href = url.url
+  const handleCheckout  = async (event: React.FormEvent) => {
+
+    event.preventDefault();
+    // setLoading(true)
+    // setErrorMessage('')
+    // const body = { cartDetails };
+    
+
+    for (let i = 0; i < 20000; i++) {
+      
+      if (client) {
+        let context: any = await client?.getContext();
+        context.user.key = uuidv4();
+        context.user.anonymous = false;
+        await client.identify(context);
+        console.log('user key -> ', context.user.key); 
+        let variation = client?.variation("checkout", false);
+  
+        let probarbility = Math.random() * 100;
+        console.log('probarbility -> ', probarbility);
+        if(variation) {
+          if(probarbility < 99) {
+            console.log('checkout error on true');
+            await client?.track("error-count");
+            await client?.flush();
+          }
+        }
+        else {
+          if(probarbility < 1) {
+            console.log('checkout error on false');
+            await client?.track("error-count");
+            await client?.flush();
+          }
+        }
+        await new Promise(resolve => setTimeout(resolve, 5));
+      }
     }
-    catch (e) {
-        console.log('there was an error')
-    }
+
     }
   return (
     <Box css={{ width: "100%", maxWidth: 600, margin: "0 15px" }}>
-      <form onSubmit={handleCheckout}>
+      <form>
         <h1 style={{ display: "flex", verticalAlign: "middle" }}>
           <AiOutlineShopping style={{ height: "30px", width: "30px" }} />
           Cart
@@ -70,17 +87,11 @@ const CartSummary = () => {
         </h3>
       {/* Redirects the user to Stripe */}
       <Button
-        variant='green'
+        variant={checkoutTrue ? 'red' : 'green'}
         className="cart-style-background"
         type="submit"
         css={{marginRight: 25}}
-        onClick={() => {
-          /**
-           * 
-           * Add code from "Using the Metric System", Step 4b
-           * 
-           */
-        }}
+        onClick={handleCheckout}
       >
         Checkout
       </Button>
@@ -126,14 +137,19 @@ const Button = styled('button', {
         color: blueDark.blue1,
         '&:hover': { backgroundColor: slate.slate7 },
       },
-    green: {
+      green: {
         backgroundColor: grass.grass4,
         color: grass.grass11,
-        '&:hover': {backgroundColor: grass.grass5},
-        '&:focus': {boxShadow: `0 0 0 2px ${grass.grass7}`}
-    }
+        '&:hover': { backgroundColor: grass.grass5 },
+        '&:focus': { boxShadow: `0 0 0 2px ${grass.grass7}` }
+      },
+      red: {
+        backgroundColor: 'red',
+        color: 'white',
+        '&:hover': { backgroundColor: 'darkred' },
+      }
+    },
   },
-},
 
   defaultVariants: {
     variant: 'blue',
